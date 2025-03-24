@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+	"golang.org/x/crypto/bcrypt"
 	"log"
 	"net/http"
 	"os"
@@ -16,6 +18,10 @@ import (
 )
 
 func main() {
+
+	hash, _ := bcrypt.GenerateFromPassword([]byte("12345678"), bcrypt.DefaultCost)
+	fmt.Println(string(hash))
+
 	// Load environment variables
 	if err := godotenv.Load(); err != nil {
 		log.Printf("Warning: No .env file found")
@@ -39,7 +45,8 @@ func main() {
 
 	// Initialize handlers with database connection
 	authHandler := &handlers.AuthHandler{DB: db.SQL}
-	//bookHandler := &handlers.BookHandler{DB: db.SQL}
+	adminHandler := &handlers.AdminHandler{DB: db.SQL}
+	adminShopHandler := &handlers.AdminShopHandler{DB: db.SQL}
 
 	// Create router
 	router := mux.NewRouter()
@@ -50,6 +57,8 @@ func main() {
 
 	// Public routes
 	routes.RegisterAuthRoutes(router, authHandler)
+	//routes.RegisterAdminRoutes(router, adminHandler)
+	routes.RegisterAdminRoutes(router, adminHandler, adminShopHandler)
 
 	// Protected routes
 	protectedRouter := router.PathPrefix("/api").Subrouter()

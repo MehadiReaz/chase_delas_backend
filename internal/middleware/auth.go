@@ -1,13 +1,12 @@
 package middleware
 
 import (
+	"chase_deal/pkg/utils"
 	"context"
 	"errors"
+	"github.com/golang-jwt/jwt/v5"
 	"net/http"
 	"strings"
-
-	"chase_deal/pkg/utils"
-	"github.com/golang-jwt/jwt/v5"
 )
 
 type contextKey string

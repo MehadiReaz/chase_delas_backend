@@ -14,14 +14,35 @@ import (
 // JWT functions
 var jwtSecret = []byte(os.Getenv("JWT_SECRET"))
 
-func GenerateJWT(userID string) (string, error) {
+func GenerateJWT(userID string, role string) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"user_id": userID,
+		"role":    role,
 		"exp":     time.Now().Add(time.Hour * 24).Unix(),
-		"iat":     time.Now().Unix(),
+	})
+	return token.SignedString(jwtSecret)
+}
+
+func GetUserRole(r *http.Request) string {
+	tokenString := r.Header.Get("Authorization")
+	if tokenString == "" {
+		return ""
+	}
+
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		return jwtSecret, nil
 	})
 
-	return token.SignedString(jwtSecret)
+	if err != nil || token == nil || !token.Valid {
+		return ""
+	}
+
+	if claims, ok := token.Claims.(jwt.MapClaims); ok {
+		if role, ok := claims["role"].(string); ok {
+			return role
+		}
+	}
+	return ""
 }
 
 func ValidateJWT(tokenString string) (*jwt.Token, error) {
@@ -72,6 +93,29 @@ func SuccessResponse(w http.ResponseWriter, statusCode int, message string, data
 		return
 	}
 }
+
 func IsDuplicateError(err error) bool {
 	return strings.Contains(err.Error(), "UNIQUE constraint failed")
+}
+
+func GetUserID(r *http.Request) string {
+	tokenString := r.Header.Get("Authorization")
+	if tokenString == "" {
+		return ""
+	}
+
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		return jwtSecret, nil
+	})
+
+	if err != nil || token == nil || !token.Valid {
+		return ""
+	}
+
+	if claims, ok := token.Claims.(jwt.MapClaims); ok {
+		if userID, ok := claims["user_id"].(string); ok {
+			return userID
+		}
+	}
+	return ""
 }
